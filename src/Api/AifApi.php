@@ -59,9 +59,10 @@ final readonly class AifApi
 
     /**
      * @param array<string, mixed> $payload
+     * @param mixed $contextSource Host framework request/session/controller context.
      * @return array<string, mixed>
      */
-    public function embed(array $payload): array
+    public function embed(array $payload, mixed $contextSource = null): array
     {
         try {
             $response = $this->gateway->embed(
@@ -71,6 +72,7 @@ final readonly class AifApi
                     metadata: $this->arrayValue($payload['metadata'] ?? []),
                 ),
                 provider: isset($payload['provider']) ? (string) $payload['provider'] : null,
+                context: $this->contextResolver === null ? null : $this->contextResolver->resolve($contextSource),
             );
 
             return [
@@ -91,9 +93,10 @@ final readonly class AifApi
 
     /**
      * @param array<string, mixed> $payload
+     * @param mixed $contextSource Host framework request/session/controller context.
      * @return array<string, mixed>
      */
-    public function moderate(array $payload): array
+    public function moderate(array $payload, mixed $contextSource = null): array
     {
         try {
             $response = $this->gateway->moderate(
@@ -103,6 +106,7 @@ final readonly class AifApi
                     metadata: $this->arrayValue($payload['metadata'] ?? []),
                 ),
                 provider: isset($payload['provider']) ? (string) $payload['provider'] : null,
+                context: $this->contextResolver === null ? null : $this->contextResolver->resolve($contextSource),
             );
 
             return [

@@ -113,6 +113,41 @@ try {
 } catch (PolicyDeniedException) {
 }
 
+$providerPolicyGateway = new AifGateway(
+    providers: $registry,
+    policyEngine: new StaticPolicyEngine(allowedProviders: ['openai']),
+);
+
+try {
+    $providerPolicyGateway->infer($request, new ExecutionContext(userId: 'u_1', workspaceId: 'w_1', roles: ['admin']));
+    fwrite(STDERR, "Expected default provider policy denial.\n");
+    exit(1);
+} catch (PolicyDeniedException) {
+}
+
+try {
+    $policyGateway->embed(new EmbeddingRequest(input: 'Denied embedding'), context: $context);
+    fwrite(STDERR, "Expected embedding policy denial.\n");
+    exit(1);
+} catch (PolicyDeniedException) {
+}
+
+try {
+    $policyGateway->moderate(new ModerationRequest(input: 'Denied moderation'), context: $context);
+    fwrite(STDERR, "Expected moderation policy denial.\n");
+    exit(1);
+} catch (PolicyDeniedException) {
+}
+
+try {
+    foreach ($policyGateway->stream(new InferenceRequest(input: 'Denied stream'), $context) as $event) {
+    }
+
+    fwrite(STDERR, "Expected stream policy denial.\n");
+    exit(1);
+} catch (PolicyDeniedException) {
+}
+
 $promptRegistry = new InMemoryPromptRegistry([
     new PromptVersion(
         code: 'summarize_ticket',
@@ -153,6 +188,29 @@ try {
 
 if (count($auditLog->all()) !== 2) {
     fwrite(STDERR, "Unexpected audit record count.\n");
+    exit(1);
+}
+
+$operationAuditLog = new InMemoryAuditLog();
+$operationAuditGateway = new AifGateway(
+    providers: $registry,
+    policyEngine: new StaticPolicyEngine(allowedRoles: ['admin']),
+    auditLog: $operationAuditLog,
+);
+$adminContext = new ExecutionContext(userId: 'u_1', workspaceId: 'w_1', roles: ['admin']);
+$operationAuditGateway->embed(new EmbeddingRequest(input: 'Allowed embedding'), context: $adminContext);
+
+try {
+    $operationAuditGateway->moderate(new ModerationRequest(input: 'Denied moderation'), context: $context);
+    fwrite(STDERR, "Expected audited moderation policy denial.\n");
+    exit(1);
+} catch (PolicyDeniedException) {
+}
+
+$operationAuditRecords = $operationAuditLog->all();
+
+if (count($operationAuditRecords) !== 2 || $operationAuditRecords[1]->status !== 'denied') {
+    fwrite(STDERR, "Unexpected operation audit behavior.\n");
     exit(1);
 }
 
