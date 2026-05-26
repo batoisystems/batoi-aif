@@ -1,0 +1,291 @@
+-- Batoi AIF RAD foundation schema
+-- Uses RAD system columns and table-specific s_/a_ column prefixes.
+
+CREATE TABLE IF NOT EXISTS s_aif_provider_catalog (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  uid char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  livestatus enum('0','1','2','3') COLLATE utf8mb4_unicode_ci DEFAULT '0' COMMENT '0 = inactive, 1 = active, 2 = archived, 3 = suspended',
+  versioncode int(11) DEFAULT NULL,
+  wf_status int(11) NOT NULL DEFAULT '0',
+  space_id bigint(20) NOT NULL DEFAULT '0',
+  createdby bigint(20) DEFAULT NULL,
+  createstamp datetime DEFAULT NULL,
+  updatedby bigint(20) DEFAULT NULL,
+  updatestamp timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  s_code varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  s_name varchar(180) COLLATE utf8mb4_unicode_ci NOT NULL,
+  s_provider_type varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  s_status enum('draft','active','deprecated','disabled') COLLATE utf8mb4_unicode_ci DEFAULT 'draft',
+  s_config_schema_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  s_capabilities_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  s_region_policy_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  s_meta_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uid (uid),
+  UNIQUE KEY uq_s_aif_provider_code (space_id, s_code, livestatus),
+  KEY idx_s_aif_provider_status (space_id, s_status, livestatus)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS s_aif_model_catalog (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  uid char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  livestatus enum('0','1','2','3') COLLATE utf8mb4_unicode_ci DEFAULT '0' COMMENT '0 = inactive, 1 = active, 2 = archived, 3 = suspended',
+  versioncode int(11) DEFAULT NULL,
+  wf_status int(11) NOT NULL DEFAULT '0',
+  space_id bigint(20) NOT NULL DEFAULT '0',
+  createdby bigint(20) DEFAULT NULL,
+  createstamp datetime DEFAULT NULL,
+  updatedby bigint(20) DEFAULT NULL,
+  updatestamp timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  s_provider_id bigint(20) NOT NULL,
+  s_code varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
+  s_name varchar(180) COLLATE utf8mb4_unicode_ci NOT NULL,
+  s_model_family varchar(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  s_context_window int(11) DEFAULT NULL,
+  s_input_price decimal(12,6) DEFAULT NULL,
+  s_output_price decimal(12,6) DEFAULT NULL,
+  s_status enum('draft','active','deprecated','disabled') COLLATE utf8mb4_unicode_ci DEFAULT 'draft',
+  s_capabilities_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  s_meta_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uid (uid),
+  UNIQUE KEY uq_s_aif_model_code (space_id, s_provider_id, s_code, livestatus),
+  KEY idx_s_aif_model_status (space_id, s_status, livestatus),
+  KEY idx_s_aif_model_provider (space_id, s_provider_id, livestatus)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS s_aif_capability (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  uid char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  livestatus enum('0','1','2','3') COLLATE utf8mb4_unicode_ci DEFAULT '0' COMMENT '0 = inactive, 1 = active, 2 = archived, 3 = suspended',
+  versioncode int(11) DEFAULT NULL,
+  wf_status int(11) NOT NULL DEFAULT '0',
+  space_id bigint(20) NOT NULL DEFAULT '0',
+  createdby bigint(20) DEFAULT NULL,
+  createstamp datetime DEFAULT NULL,
+  updatedby bigint(20) DEFAULT NULL,
+  updatestamp timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  s_code varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL,
+  s_name varchar(180) COLLATE utf8mb4_unicode_ci NOT NULL,
+  s_capability_type varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  s_definition_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  s_status enum('draft','active','deprecated','disabled') COLLATE utf8mb4_unicode_ci DEFAULT 'draft',
+  PRIMARY KEY (id),
+  UNIQUE KEY uid (uid),
+  UNIQUE KEY uq_s_aif_capability_code (space_id, s_code, livestatus),
+  KEY idx_s_aif_capability_type (space_id, s_capability_type, livestatus)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS s_aif_policy_template (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  uid char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  livestatus enum('0','1','2','3') COLLATE utf8mb4_unicode_ci DEFAULT '0' COMMENT '0 = inactive, 1 = active, 2 = archived, 3 = suspended',
+  versioncode int(11) DEFAULT NULL,
+  wf_status int(11) NOT NULL DEFAULT '0',
+  space_id bigint(20) NOT NULL DEFAULT '0',
+  createdby bigint(20) DEFAULT NULL,
+  createstamp datetime DEFAULT NULL,
+  updatedby bigint(20) DEFAULT NULL,
+  updatestamp timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  s_code varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL,
+  s_name varchar(180) COLLATE utf8mb4_unicode_ci NOT NULL,
+  s_default_action enum('allow','deny','requires_review','redact_and_continue') COLLATE utf8mb4_unicode_ci DEFAULT 'deny',
+  s_scope_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  s_rule_schema_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  s_status enum('draft','active','deprecated','disabled') COLLATE utf8mb4_unicode_ci DEFAULT 'draft',
+  PRIMARY KEY (id),
+  UNIQUE KEY uid (uid),
+  UNIQUE KEY uq_s_aif_policy_template_code (space_id, s_code, livestatus),
+  KEY idx_s_aif_policy_template_status (space_id, s_status, livestatus)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS s_aif_eval_template (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  uid char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  livestatus enum('0','1','2','3') COLLATE utf8mb4_unicode_ci DEFAULT '0' COMMENT '0 = inactive, 1 = active, 2 = archived, 3 = suspended',
+  versioncode int(11) DEFAULT NULL,
+  wf_status int(11) NOT NULL DEFAULT '0',
+  space_id bigint(20) NOT NULL DEFAULT '0',
+  createdby bigint(20) DEFAULT NULL,
+  createstamp datetime DEFAULT NULL,
+  updatedby bigint(20) DEFAULT NULL,
+  updatestamp timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  s_code varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL,
+  s_name varchar(180) COLLATE utf8mb4_unicode_ci NOT NULL,
+  s_eval_type varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  s_definition_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  s_status enum('draft','active','deprecated','disabled') COLLATE utf8mb4_unicode_ci DEFAULT 'draft',
+  PRIMARY KEY (id),
+  UNIQUE KEY uid (uid),
+  UNIQUE KEY uq_s_aif_eval_template_code (space_id, s_code, livestatus),
+  KEY idx_s_aif_eval_template_type (space_id, s_eval_type, livestatus)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS a_aif_prompt (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  uid char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  livestatus enum('0','1','2','3') COLLATE utf8mb4_unicode_ci DEFAULT '0' COMMENT '0 = inactive, 1 = active, 2 = archived, 3 = suspended',
+  versioncode int(11) DEFAULT NULL,
+  wf_status int(11) NOT NULL DEFAULT '0',
+  space_id bigint(20) NOT NULL DEFAULT '0',
+  createdby bigint(20) DEFAULT NULL,
+  createstamp datetime DEFAULT NULL,
+  updatedby bigint(20) DEFAULT NULL,
+  updatestamp timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  a_code varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL,
+  a_name varchar(180) COLLATE utf8mb4_unicode_ci NOT NULL,
+  a_description text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_risk_level enum('low','medium','high','critical') COLLATE utf8mb4_unicode_ci DEFAULT 'low',
+  a_status enum('draft','active','deprecated','disabled') COLLATE utf8mb4_unicode_ci DEFAULT 'draft',
+  a_tags_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_meta_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uid (uid),
+  UNIQUE KEY uq_a_aif_prompt_code (space_id, a_code, livestatus),
+  KEY idx_a_aif_prompt_status (space_id, a_status, livestatus)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS a_aif_prompt_version (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  uid char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  livestatus enum('0','1','2','3') COLLATE utf8mb4_unicode_ci DEFAULT '0' COMMENT '0 = inactive, 1 = active, 2 = archived, 3 = suspended',
+  versioncode int(11) DEFAULT NULL,
+  wf_status int(11) NOT NULL DEFAULT '0',
+  space_id bigint(20) NOT NULL DEFAULT '0',
+  createdby bigint(20) DEFAULT NULL,
+  createstamp datetime DEFAULT NULL,
+  updatedby bigint(20) DEFAULT NULL,
+  updatestamp timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  a_prompt_id bigint(20) NOT NULL,
+  a_version varchar(40) COLLATE utf8mb4_unicode_ci NOT NULL,
+  a_template longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  a_input_schema_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_output_schema_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_approval_status enum('draft','pending_review','approved','deprecated','rejected') COLLATE utf8mb4_unicode_ci DEFAULT 'draft',
+  a_approvedby bigint(20) DEFAULT NULL,
+  a_approvedstamp datetime DEFAULT NULL,
+  a_meta_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uid (uid),
+  UNIQUE KEY uq_a_aif_prompt_version (space_id, a_prompt_id, a_version, livestatus),
+  KEY idx_a_aif_prompt_version_approval (space_id, a_approval_status, livestatus)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS a_aif_policy (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  uid char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  livestatus enum('0','1','2','3') COLLATE utf8mb4_unicode_ci DEFAULT '0' COMMENT '0 = inactive, 1 = active, 2 = archived, 3 = suspended',
+  versioncode int(11) DEFAULT NULL,
+  wf_status int(11) NOT NULL DEFAULT '0',
+  space_id bigint(20) NOT NULL DEFAULT '0',
+  createdby bigint(20) DEFAULT NULL,
+  createstamp datetime DEFAULT NULL,
+  updatedby bigint(20) DEFAULT NULL,
+  updatestamp timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  a_code varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL,
+  a_name varchar(180) COLLATE utf8mb4_unicode_ci NOT NULL,
+  a_scope_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_status enum('draft','active','deprecated','disabled') COLLATE utf8mb4_unicode_ci DEFAULT 'draft',
+  a_notes text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uid (uid),
+  UNIQUE KEY uq_a_aif_policy_code (space_id, a_code, livestatus),
+  KEY idx_a_aif_policy_status (space_id, a_status, livestatus)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS a_aif_policy_rule (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  uid char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  livestatus enum('0','1','2','3') COLLATE utf8mb4_unicode_ci DEFAULT '0' COMMENT '0 = inactive, 1 = active, 2 = archived, 3 = suspended',
+  versioncode int(11) DEFAULT NULL,
+  wf_status int(11) NOT NULL DEFAULT '0',
+  space_id bigint(20) NOT NULL DEFAULT '0',
+  createdby bigint(20) DEFAULT NULL,
+  createstamp datetime DEFAULT NULL,
+  updatedby bigint(20) DEFAULT NULL,
+  updatestamp timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  a_policy_id bigint(20) NOT NULL,
+  a_rule_key varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL,
+  a_rule_type enum('allow','deny','requires_review','redact_and_continue') COLLATE utf8mb4_unicode_ci DEFAULT 'deny',
+  a_match_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_action enum('allow','deny','requires_review','redact_and_continue') COLLATE utf8mb4_unicode_ci DEFAULT 'deny',
+  a_weight int(11) NOT NULL DEFAULT '0',
+  a_is_active enum('0','1') COLLATE utf8mb4_unicode_ci DEFAULT '1',
+  PRIMARY KEY (id),
+  UNIQUE KEY uid (uid),
+  UNIQUE KEY uq_a_aif_policy_rule_key (space_id, a_policy_id, a_rule_key, livestatus),
+  KEY idx_a_aif_policy_rule_active (space_id, a_policy_id, a_is_active, livestatus)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS a_aif_call_log (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  uid char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  livestatus enum('0','1','2','3') COLLATE utf8mb4_unicode_ci DEFAULT '0' COMMENT '0 = inactive, 1 = active, 2 = archived, 3 = suspended',
+  versioncode int(11) DEFAULT NULL,
+  wf_status int(11) NOT NULL DEFAULT '0',
+  space_id bigint(20) NOT NULL DEFAULT '0',
+  createdby bigint(20) DEFAULT NULL,
+  createstamp datetime DEFAULT NULL,
+  updatedby bigint(20) DEFAULT NULL,
+  updatestamp timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  a_request_uid char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_actor_entity_id bigint(20) DEFAULT NULL,
+  a_provider_id bigint(20) DEFAULT NULL,
+  a_model_id bigint(20) DEFAULT NULL,
+  a_prompt_version_id bigint(20) DEFAULT NULL,
+  a_policy_decision varchar(40) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_policy_evidence_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_usage_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_eval_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_request_hash char(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  a_response_hash char(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_prev_hash char(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_row_hash char(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_latency_ms int(11) DEFAULT NULL,
+  a_status enum('ok','error','denied','requires_review') COLLATE utf8mb4_unicode_ci DEFAULT 'ok',
+  a_error_code varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_error_message varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uid (uid),
+  KEY idx_a_aif_call_log_space_time (space_id, createstamp),
+  KEY idx_a_aif_call_log_status (space_id, a_status, livestatus),
+  KEY idx_a_aif_call_log_actor (space_id, a_actor_entity_id, createstamp),
+  KEY idx_a_aif_call_log_request (space_id, a_request_uid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS a_aif_eval (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  uid char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  livestatus enum('0','1','2','3') COLLATE utf8mb4_unicode_ci DEFAULT '0' COMMENT '0 = inactive, 1 = active, 2 = archived, 3 = suspended',
+  versioncode int(11) DEFAULT NULL,
+  wf_status int(11) NOT NULL DEFAULT '0',
+  space_id bigint(20) NOT NULL DEFAULT '0',
+  createdby bigint(20) DEFAULT NULL,
+  createstamp datetime DEFAULT NULL,
+  updatedby bigint(20) DEFAULT NULL,
+  updatestamp timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  a_call_log_id bigint(20) DEFAULT NULL,
+  a_eval_template_id bigint(20) DEFAULT NULL,
+  a_eval_type varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  a_result enum('pass','warn','fail','error') COLLATE utf8mb4_unicode_ci DEFAULT 'pass',
+  a_score decimal(8,4) DEFAULT NULL,
+  a_result_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uid (uid),
+  KEY idx_a_aif_eval_call (space_id, a_call_log_id),
+  KEY idx_a_aif_eval_result (space_id, a_result, livestatus)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TRIGGER IF EXISTS trg_a_aif_call_log_no_update;
+DROP TRIGGER IF EXISTS trg_a_aif_call_log_no_delete;
+
+DELIMITER $$
+CREATE TRIGGER trg_a_aif_call_log_no_update BEFORE UPDATE ON a_aif_call_log FOR EACH ROW
+BEGIN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'a_aif_call_log is immutable';
+END$$
+CREATE TRIGGER trg_a_aif_call_log_no_delete BEFORE DELETE ON a_aif_call_log FOR EACH ROW
+BEGIN
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'a_aif_call_log is immutable';
+END$$
+DELIMITER ;

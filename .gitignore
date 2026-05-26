@@ -1,0 +1,4 @@
+AGENTS.md
+specs/
+vendor/
+.phpunit.cache/

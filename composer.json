@@ -1,0 +1,29 @@
+{
+  "name": "batoi/aif",
+  "description": "Standalone PHP framework for governed AI execution and application integration",
+  "type": "library",
+  "license": "Apache-2.0",
+  "require": {
+    "ext-curl": "*",
+    "php": ">=8.3"
+  },
+  "suggest": {
+    "ext-pdo_mysql": "Required only for MySQL-backed persistence adapters such as the Batoi RAD persistence profile."
+  },
+  "autoload": {
+    "psr-4": {
+      "Batoi\\Aif\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Batoi\\Aif\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "php tests/smoke.php"
+  },
+  "config": {
+    "sort-packages": true
+  }
+}
