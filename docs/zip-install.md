@@ -4,6 +4,10 @@ Batoi AIF can be installed without Composer by downloading the GitHub ZIP archiv
 
 Composer installation is still preferred when the target project already manages dependencies through Composer. ZIP installation is for RAD deployments or other application repositories that need a checked-in or manually placed framework copy.
 
+ZIP/drop-in installation is a permanent distribution requirement for AIF core. Do not remove `autoload.php` or make Composer execution mandatory for using the framework.
+
+Composer is the native PHP package manager for AIF core. npm is not required for the PHP framework; future npm packages may be added only for JavaScript/UI assets or client tooling.
+
 ## Recommended Folder
 
 For a RAD repository, place AIF under:

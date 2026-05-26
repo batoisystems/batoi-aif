@@ -40,6 +40,7 @@ use Batoi\Aif\Prompts\InMemoryPromptRegistry;
 use Batoi\Aif\Providers\InMemoryProviderRegistry;
 use Batoi\Aif\Providers\MockProvider;
 use Batoi\Aif\Providers\OpenAICompatibleProvider;
+use Batoi\Aif\Queue\InMemoryQueueAdapter;
 use Batoi\Aif\Rad\RadArrayContextResolver;
 use Batoi\Aif\Rad\RadRunDataContextResolver;
 use Batoi\Aif\Rad\RadRolePermissionChecker;
@@ -51,6 +52,9 @@ use Batoi\Aif\Value\InferenceRequest;
 use Batoi\Aif\Value\ModerationRequest;
 use Batoi\Aif\Value\ProviderCapability;
 use Batoi\Aif\Value\PromptVersion;
+use Batoi\Aif\Value\VectorRecord;
+use Batoi\Aif\Value\VectorSearchRequest;
+use Batoi\Aif\Vector\InMemoryVectorStore;
 
 if (Aif::name() !== 'Batoi AIF') {
     fwrite(STDERR, "Unexpected framework name.\n");
@@ -256,6 +260,73 @@ $radRunDataContext = (new RadRunDataContextResolver())->resolve([
 
 if ($radRunDataContext->userId !== '30' || $radRunDataContext->workspaceId !== '40' || $radRunDataContext->roles !== ['owner']) {
     fwrite(STDERR, "Unexpected RAD runData context adapter behavior.\n");
+    exit(1);
+}
+
+$queue = new InMemoryQueueAdapter();
+$jobId = $queue->dispatch('aif.embedding.create', [
+    'request_uid' => 'req_1',
+    'idempotency_key' => 'idem_1',
+]);
+
+if (($queue->get($jobId)['status'] ?? '') !== 'queued') {
+    fwrite(STDERR, "Unexpected in-memory queue dispatch behavior.\n");
+    exit(1);
+}
+
+$queue->acknowledge($jobId);
+
+if (($queue->get($jobId)['status'] ?? '') !== 'acknowledged') {
+    fwrite(STDERR, "Unexpected in-memory queue acknowledge behavior.\n");
+    exit(1);
+}
+
+$failedJobId = $queue->dispatch('aif.eval.run', ['request_uid' => 'req_2']);
+$queue->fail($failedJobId, 'Evaluator unavailable.', ['retryable' => true]);
+
+if (($queue->get($failedJobId)['failure_metadata']['retryable'] ?? false) !== true) {
+    fwrite(STDERR, "Unexpected in-memory queue failure behavior.\n");
+    exit(1);
+}
+
+$vectorStore = new InMemoryVectorStore();
+$vectorStore->upsert(new VectorRecord(
+    collection: 'tickets',
+    id: 'doc_1',
+    vector: [1.0, 0.0],
+    content: 'Printer is offline.',
+    metadata: ['space_id' => '10', 'source_uid' => 'ticket_1'],
+));
+$vectorStore->upsert(new VectorRecord(
+    collection: 'tickets',
+    id: 'doc_2',
+    vector: [0.0, 1.0],
+    content: 'Billing account needs review.',
+    metadata: ['space_id' => '20', 'source_uid' => 'ticket_2'],
+));
+
+$vectorResults = $vectorStore->search(new VectorSearchRequest(
+    collection: 'tickets',
+    vector: [0.9, 0.1],
+    topK: 1,
+    minScore: 0.0,
+    filters: ['space_id' => '10'],
+));
+
+if (count($vectorResults) !== 1 || $vectorResults[0]->record->id !== 'doc_1') {
+    fwrite(STDERR, "Unexpected in-memory vector search behavior.\n");
+    exit(1);
+}
+
+$vectorStore->delete('tickets', 'doc_1');
+$deletedVectorResults = $vectorStore->search(new VectorSearchRequest(
+    collection: 'tickets',
+    vector: [1.0, 0.0],
+    filters: ['space_id' => '10'],
+));
+
+if ($deletedVectorResults !== []) {
+    fwrite(STDERR, "Unexpected in-memory vector delete behavior.\n");
     exit(1);
 }
 

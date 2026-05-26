@@ -6,6 +6,10 @@ Batoi AIF (Artificial Intelligence Framework) is a standalone PHP framework for 
 
 Batoi RAD is a first-class integration target, but AIF core is framework-independent and can be used in RAD apps, Laravel/Symfony/Slim applications, vanilla PHP projects, SaaS products, CLI workers, and internal enterprise tools.
 
+## Status
+
+This repository is in early foundation work. The current package includes the core gateway, provider contracts, mock and OpenAI-compatible providers, prompt rendering, static policy checks, in-memory audit logging, RAD context adapters, queue/vector contracts, in-memory queue/vector implementations, and RAD persistence DDL.
+
 ## What It Provides
 
 - Provider abstraction for AI text, embedding, moderation, and streaming workflows.
@@ -17,14 +21,13 @@ Batoi RAD is a first-class integration target, but AIF core is framework-indepen
 - OpenAI-compatible provider support.
 - First-class Batoi RAD integration profile without making RAD a core dependency.
 
-## Core Stack
+## Requirements
 
 Batoi AIF core is PHP-first and adapter-oriented.
 
-Core requirements:
-
 - PHP 8.3+
-- Composer autoloading or the bundled `autoload.php` for GitHub ZIP installs
+- `ext-curl` for the bundled cURL HTTP transport
+- Composer autoloading or the bundled `autoload.php` for GitHub ZIP/drop-in installs
 - cURL-based HTTP provider transport
 - REST-style integration contracts
 
@@ -54,23 +57,35 @@ See [docs/framework-independence.md](docs/framework-independence.md) for the dep
 
 ## Installation
 
-Preferred Composer install:
+Batoi AIF must remain installable through both Composer and GitHub ZIP/drop-in placement.
+
+Composer install for PHP projects using Composer:
 
 ```bash
 composer require batoi/aif
 ```
 
-Manual GitHub ZIP install:
+If the package has not yet been published to Packagist, use a Composer path or VCS repository entry from your application until publication.
+
+Manual GitHub ZIP/drop-in install:
 
 1. Download the Batoi AIF GitHub ZIP archive.
 2. Extract it into a target repository, for example `vendor/batoi/aif/` or `rad/vendor/batoi/aif/` for RAD apps.
 3. Include the bundled autoloader when Composer is not managing the package:
 
 ```php
+require_once __DIR__ . '/vendor/batoi/aif/autoload.php';
+```
+
+For RAD apps, use the RAD path:
+
+```php
 require_once __DIR__ . '/rad/vendor/batoi/aif/autoload.php';
 ```
 
-See [docs/zip-install.md](docs/zip-install.md) for the RAD fallback autoload pattern.
+Composer is the native package manager for the PHP framework. npm is not required for AIF core; future npm packages may be added only for JavaScript/UI assets if needed.
+
+See [docs/zip-install.md](docs/zip-install.md) for the RAD fallback autoload pattern and [docs/distribution-policy.md](docs/distribution-policy.md) for the release distribution policy.
 
 ## Quick Start
 
@@ -135,13 +150,24 @@ RAD support is delivered as an integration profile:
 - adapters under `src/Rad/`
 - migrations under `database/migrations/rad/`
 - RAD persistence profile in [docs/rad-persistence-profile.md](docs/rad-persistence-profile.md)
-- RAD implementation handoff in `specs/rad-core-aif-implementation-instructions.md`
+- ZIP/drop-in guidance in [docs/zip-install.md](docs/zip-install.md)
 
 RAD deployments may install AIF with Composer or by placing a GitHub ZIP extraction at:
 
 ```text
 rad/vendor/batoi/aif/
 ```
+
+## Optional Adapters
+
+Queue and vector-store contracts are available for async work and governed RAG integrations:
+
+- [docs/adapters.md](docs/adapters.md)
+- [docs/laravel-adapter.md](docs/laravel-adapter.md)
+- [docs/symfony-adapter.md](docs/symfony-adapter.md)
+- [docs/queue-adapters.md](docs/queue-adapters.md)
+- [docs/vector-store-adapters.md](docs/vector-store-adapters.md)
+- [examples/standalone-queue-vector.php](examples/standalone-queue-vector.php)
 
 ## Development
 
@@ -151,9 +177,25 @@ Run the smoke test:
 php tests/smoke.php
 ```
 
+Run the standalone queue/vector example:
+
+```bash
+php examples/standalone-queue-vector.php
+```
+
 Run syntax checks:
 
 ```bash
-find src tests -name '*.php' -print0 | xargs -0 -n1 php -l
 php -l autoload.php
+find src tests examples -name '*.php' -print0 | xargs -0 -n1 php -l
 ```
+
+Composer validation is recommended where Composer is installed:
+
+```bash
+composer validate --no-check-publish
+```
+
+## License
+
+Apache-2.0. See [LICENSE](LICENSE).
