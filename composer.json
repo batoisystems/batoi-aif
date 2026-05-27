@@ -8,7 +8,9 @@
     "php": ">=8.3"
   },
   "suggest": {
-    "ext-pdo_mysql": "Required only for MySQL-backed persistence adapters such as the Batoi RAD persistence profile."
+    "ext-pdo_mysql": "Required only for MySQL-backed persistence adapters such as the Batoi RAD persistence profile.",
+    "illuminate/support": "Useful for Laravel service provider integration examples and future Laravel adapter packages.",
+    "symfony/framework-bundle": "Useful for Symfony bundle/controller integration examples and future Symfony adapter packages."
   },
   "autoload": {
     "psr-4": {
@@ -20,6 +22,12 @@
       "Batoi\\Aif\\Tests\\": "tests/"
     }
   },
+  "bin": [
+    "bin/aif-doctor.php",
+    "bin/aif-config-check.php",
+    "bin/aif-smoke.php",
+    "bin/aif-rad-schema-check.php"
+  ],
   "scripts": {
     "test": "php tests/smoke.php"
   },

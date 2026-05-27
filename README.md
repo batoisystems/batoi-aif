@@ -116,6 +116,34 @@ For a GitHub ZIP/drop-in install, replace Composer autoload with:
 require_once __DIR__ . '/vendor/batoi/aif/autoload.php';
 ```
 
+## Adoption Paths
+
+Start with the path closest to your project:
+
+| Use case | Start here |
+| --- | --- |
+| Standalone PHP evaluation | [examples/hello-world.php](examples/hello-world.php) |
+| GitHub ZIP/drop-in install | [examples/zip-dropin/hello-world.php](examples/zip-dropin/hello-world.php) |
+| Governed execution | [examples/governed-gateway.php](examples/governed-gateway.php) |
+| Prompt registry/versioning | [examples/prompt-registry.php](examples/prompt-registry.php) |
+| Batoi RAD integration | [examples/rad/bootstrap-aif.php](examples/rad/bootstrap-aif.php) |
+| REST/API controller integration | [examples/api-envelope.php](examples/api-envelope.php) |
+| Laravel integration | [examples/laravel](examples/laravel) |
+| Symfony integration | [examples/symfony](examples/symfony) |
+| Queue/worker workflows | [docs/queue-adapters.md](docs/queue-adapters.md) |
+| Queue/worker examples | [examples/worker/embedding-worker.php](examples/worker/embedding-worker.php) |
+| Vector/RAG workflows | [examples/rag/answer-with-context.php](examples/rag/answer-with-context.php) |
+| Starter templates | [templates/README.md](templates/README.md) |
+
+Adoption tooling:
+
+```bash
+php bin/aif-doctor.php
+php bin/aif-config-check.php --config examples/config/aif.php
+php bin/aif-smoke.php --provider=mock --infer
+php bin/aif-rad-schema-check.php
+```
+
 ## API Envelope
 
 AIF facades return a stable envelope:
@@ -183,11 +211,32 @@ Run the standalone queue/vector example:
 php examples/standalone-queue-vector.php
 ```
 
+Run adoption examples:
+
+```bash
+php examples/hello-world.php
+php examples/governed-gateway.php
+php examples/prompt-registry.php
+php examples/api-envelope.php
+php examples/zip-dropin/hello-world.php
+php examples/rad/bootstrap-aif.php
+php examples/worker/embedding-worker.php
+php examples/worker/eval-runner.php
+php examples/rag/ingest.php
+php examples/rag/search.php
+php examples/rag/answer-with-context.php
+```
+
+Laravel and Symfony examples are skeletons intended to be copied into host applications:
+
+- [examples/laravel](examples/laravel)
+- [examples/symfony](examples/symfony)
+
 Run syntax checks:
 
 ```bash
 php -l autoload.php
-find src tests examples -name '*.php' -print0 | xargs -0 -n1 php -l
+find src tests examples bin -name '*.php' -print0 | xargs -0 -n1 php -l
 ```
 
 Composer validation is recommended where Composer is installed:

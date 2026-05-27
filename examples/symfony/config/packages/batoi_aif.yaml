@@ -1,0 +1,13 @@
+batoi_aif:
+  default_provider: '%env(default:mock:AIF_PROVIDER)%'
+  providers:
+    mock:
+      type: mock
+    openai:
+      type: openai-compatible
+      base_url: '%env(default:https://api.openai.com/v1:AIF_OPENAI_BASE_URL)%'
+      api_key: '%env(default::AIF_OPENAI_API_KEY)%'
+  policy:
+    allowed_roles: ['ROLE_ADMIN']
+    allowed_providers: ['mock', 'openai']
+
