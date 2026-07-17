@@ -29,9 +29,38 @@
     "bin/aif-rad-schema-check.php"
   ],
   "scripts": {
-    "test": "php tests/smoke.php"
+    "analyse": "phpstan analyse --no-progress --debug",
+    "lint": "phpcs",
+    "test": [
+      "@test:unit",
+      "@test:smoke"
+    ],
+    "test:smoke": "php tests/smoke.php",
+    "test:unit": "phpunit"
   },
   "config": {
     "sort-packages": true
+  },
+  "archive": {
+    "name": "batoi-aif",
+    "exclude": [
+      "/.DS_Store",
+      "/.github",
+      "/.phpunit.cache",
+      "/AGENTS.md",
+      "/examples",
+      "/specs",
+      "/tests",
+      "/vendor",
+      "/composer.lock",
+      "/phpcs.xml",
+      "/phpstan.neon",
+      "/phpunit.xml"
+    ]
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^2.1",
+    "phpunit/phpunit": "^11.5",
+    "squizlabs/php_codesniffer": "^3.13"
   }
 }

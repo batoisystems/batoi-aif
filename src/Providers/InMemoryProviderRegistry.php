@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Batoi\Aif\Providers;
 
 use Batoi\Aif\Contracts\AIProviderInterface;
-use Batoi\Aif\Contracts\ProviderRegistryInterface;
+use Batoi\Aif\Contracts\EnumerableProviderRegistryInterface;
 use Batoi\Aif\Exception\ProviderNotFoundException;
 
-final class InMemoryProviderRegistry implements ProviderRegistryInterface
+final class InMemoryProviderRegistry implements EnumerableProviderRegistryInterface
 {
     /**
      * @param array<string, AIProviderInterface> $providers
@@ -35,5 +35,10 @@ final class InMemoryProviderRegistry implements ProviderRegistryInterface
     public function has(string $providerCode): bool
     {
         return isset($this->providers[$providerCode]);
+    }
+
+    public function all(): array
+    {
+        return $this->providers;
     }
 }

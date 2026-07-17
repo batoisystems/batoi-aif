@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<ruleset name="Batoi AIF">
+    <description>PHP 8.3 coding standard for Batoi AIF.</description>
+    <file>src</file>
+    <file>tests</file>
+    <exclude-pattern>tests/smoke.php</exclude-pattern>
+    <arg name="extensions" value="php"/>
+    <arg name="colors"/>
+    <rule ref="PSR12"/>
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="160"/>
+            <property name="absoluteLineLimit" value="180"/>
+        </properties>
+    </rule>
+</ruleset>

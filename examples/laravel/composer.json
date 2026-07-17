@@ -1,0 +1,32 @@
+{
+  "name": "batoi/aif-laravel-adapter",
+  "description": "Optional Laravel integration adapter for Batoi AIF",
+  "type": "library",
+  "license": "Apache-2.0",
+  "require": {
+    "php": ">=8.3",
+    "batoi/aif": "dev-main",
+    "illuminate/http": "^11.0 || ^12.0",
+    "illuminate/support": "^11.0 || ^12.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.5"
+  },
+  "repositories": [
+    {
+      "type": "path",
+      "url": "../..",
+      "options": {"symlink": true}
+    }
+  ],
+  "autoload": {
+    "psr-4": {"Batoi\\Aif\\Laravel\\": "./"},
+    "exclude-from-classmap": ["tests/"]
+  },
+  "autoload-dev": {
+    "psr-4": {"Batoi\\Aif\\Laravel\\Tests\\": "tests/"}
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "scripts": {"test": "phpunit"}
+}

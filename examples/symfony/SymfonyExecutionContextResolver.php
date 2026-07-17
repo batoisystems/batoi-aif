@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Aif;
+namespace Batoi\Aif\Symfony;
 
 use Batoi\Aif\Contracts\ExecutionContextResolverInterface;
 use Batoi\Aif\Value\ExecutionContext;
@@ -31,4 +31,3 @@ final readonly class SymfonyExecutionContextResolver implements ExecutionContext
         );
     }
 }
-

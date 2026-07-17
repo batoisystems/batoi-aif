@@ -25,6 +25,14 @@ final readonly class AuditRecord
         public array $policyDecision = [],
         public array $usage = [],
         public array $metadata = [],
+        public ?string $userId = null,
+        public ?string $workspaceId = null,
+        public ?string $traceUid = null,
+        public ?string $operation = null,
+        public ?string $createdAt = null,
+        public ?int $latencyMs = null,
+        public ?string $providerRequestUid = null,
+        public ?string $policyVersion = null,
     ) {
     }
 }

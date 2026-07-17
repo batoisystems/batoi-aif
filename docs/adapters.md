@@ -10,6 +10,7 @@ Core stays independent. Adapters may depend on Laravel, Symfony, RAD, Redis, Rab
 - Adapters must not call providers directly.
 - Adapters must not serialize provider secrets into queued payloads.
 - Adapters must preserve execution context, trace IDs, policy evidence, and audit correlation.
+- HTTP retries are opt-in through `RetryingHttpTransport`. Enable them only when the provider operation is idempotent or the request carries a provider-supported idempotency key.
 - Optional adapter dependencies belong outside the core `require` list.
 
 ## Current Core Adapter Targets

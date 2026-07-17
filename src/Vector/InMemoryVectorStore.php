@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Batoi\Aif\Vector;
 
-use Batoi\Aif\Contracts\VectorStoreInterface;
+use Batoi\Aif\Contracts\AccessControlledVectorStoreInterface;
+use Batoi\Aif\Value\ExecutionContext;
 use Batoi\Aif\Value\VectorRecord;
 use Batoi\Aif\Value\VectorSearchRequest;
 use Batoi\Aif\Value\VectorSearchResult;
 use InvalidArgumentException;
 
-final class InMemoryVectorStore implements VectorStoreInterface
+final class InMemoryVectorStore implements AccessControlledVectorStoreInterface
 {
     /**
      * @var array<string, array<string, VectorRecord>>
@@ -24,11 +25,44 @@ final class InMemoryVectorStore implements VectorStoreInterface
 
     public function search(VectorSearchRequest $request): array
     {
+        return $this->searchRecords($request);
+    }
+
+    public function searchGoverned(VectorSearchRequest $request, ExecutionContext $context): array
+    {
+        return $this->searchRecords(
+            $request,
+            static function (VectorRecord $record) use ($context): bool {
+                $metadata = $record->metadata;
+                if (($metadata['space_id'] ?? null) !== $context->workspaceId) {
+                    return false;
+                }
+
+                if (($metadata['acl_visibility'] ?? 'public') === 'public') {
+                    return true;
+                }
+
+                $users = $metadata['acl_user_ids'] ?? [];
+                $roles = $metadata['acl_roles'] ?? [];
+
+                return is_array($users)
+                    && is_array($roles)
+                    && (in_array($context->userId, $users, true) || array_intersect($context->roles, $roles) !== []);
+            },
+        );
+    }
+
+    /**
+     * @param null|callable(VectorRecord): bool $access
+     * @return list<VectorSearchResult>
+     */
+    private function searchRecords(VectorSearchRequest $request, ?callable $access = null): array
+    {
         $query = $request->normalizedVector();
         $results = [];
 
         foreach ($this->records[$request->collection] ?? [] as $record) {
-            if (!$this->matchesFilters($record, $request->filters)) {
+            if (!$this->matchesFilters($record, $request->filters) || ($access !== null && !$access($record))) {
                 continue;
             }
 

@@ -7,6 +7,7 @@ namespace Batoi\Aif\Prompts;
 use Batoi\Aif\Contracts\PromptRegistryInterface;
 use Batoi\Aif\Exception\PromptNotFoundException;
 use Batoi\Aif\Value\PromptVersion;
+use LogicException;
 
 final class InMemoryPromptRegistry implements PromptRegistryInterface
 {
@@ -27,6 +28,12 @@ final class InMemoryPromptRegistry implements PromptRegistryInterface
 
     public function register(PromptVersion $prompt): void
     {
+        $existing = $this->prompts[$prompt->code][$prompt->version] ?? null;
+
+        if ($existing !== null && $existing != $prompt) {
+            throw new LogicException(sprintf('Prompt versions are immutable: %s@%s', $prompt->code, $prompt->version));
+        }
+
         $this->prompts[$prompt->code][$prompt->version] = $prompt;
     }
 
@@ -42,7 +49,7 @@ final class InMemoryPromptRegistry implements PromptRegistryInterface
         }
 
         $versions = $this->prompts[$promptCode];
-        krsort($versions, SORT_NATURAL);
+        uksort($versions, static fn (string $left, string $right): int => version_compare($right, $left));
 
         return reset($versions);
     }

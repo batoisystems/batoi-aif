@@ -19,4 +19,3 @@ return [
         'allowed_providers' => ['mock', 'openai'],
     ],
 ];
-

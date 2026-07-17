@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace Batoi\Aif\Laravel;
 
 use Batoi\Aif\Api\AifApi;
 use Illuminate\Http\JsonResponse;
@@ -22,4 +22,3 @@ final readonly class AifController
         ));
     }
 }
-

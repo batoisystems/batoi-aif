@@ -1,18 +1,17 @@
 services:
-  App\Aif\SymfonyExecutionContextResolver: ~
+  Batoi\Aif\Symfony\SymfonyExecutionContextResolver: ~
 
   Batoi\Aif\Gateway\AifGateway:
-    factory: ['App\Aif\AifFactory', 'gateway']
+    factory: ['Batoi\Aif\Symfony\AifFactory', 'gateway']
     arguments:
       $config: '%batoi_aif%'
 
   Batoi\Aif\Api\AifApi:
     arguments:
       $gateway: '@Batoi\Aif\Gateway\AifGateway'
-      $contextResolver: '@App\Aif\SymfonyExecutionContextResolver'
+      $contextResolver: '@Batoi\Aif\Symfony\SymfonyExecutionContextResolver'
 
-  App\Controller\AifController:
+  Batoi\Aif\Symfony\AifController:
     arguments:
       $aif: '@Batoi\Aif\Api\AifApi'
     tags: ['controller.service_arguments']
-

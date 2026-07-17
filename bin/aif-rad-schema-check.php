@@ -17,11 +17,12 @@ $requiredTables = [
     'a_aif_policy',
     'a_aif_policy_rule',
     'a_aif_call_log',
+    'a_aif_review',
     'a_aif_eval',
+    'a_aif_queue_job',
 ];
 $optionalTables = [
     'a_aif_embedding',
-    'a_aif_review',
     'a_aif_memory',
     'a_aif_workflow',
 ];

@@ -2,3 +2,10 @@ AGENTS.md
 specs/
 vendor/
 .phpunit.cache/
+.DS_Store
+.env
+.env.*
+*.local
+coverage/
+build/
+dist/

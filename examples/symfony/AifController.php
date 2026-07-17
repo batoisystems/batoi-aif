@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Controller;
+namespace Batoi\Aif\Symfony;
 
 use Batoi\Aif\Api\AifApi;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -26,4 +26,3 @@ final readonly class AifController
         ));
     }
 }
-

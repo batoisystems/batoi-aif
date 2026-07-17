@@ -1,16 +1,25 @@
 # Laravel Adapter
 
-The Laravel adapter should make Batoi AIF feel native in Laravel while preserving AIF's governance boundary.
+The Laravel adapter makes Batoi AIF available as a separately installable/testable example package while preserving AIF's governance boundary.
 
 This adapter is optional. AIF core must work without Laravel installed.
 
-## Proposed Namespace
+## Namespace
 
 ```text
 Batoi\Aif\Laravel
 ```
 
-## Proposed Structure
+## Current Package
+
+The optional package is under `examples/laravel/` with its own `composer.json`, PHPUnit configuration, and context-resolver test. Its framework dependencies are not part of the root package.
+
+```bash
+composer install --working-dir=examples/laravel
+composer test --working-dir=examples/laravel
+```
+
+## Target Expansion
 
 ```text
 src/Laravel/

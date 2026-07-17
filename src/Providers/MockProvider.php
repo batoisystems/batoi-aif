@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Batoi\Aif\Providers;
 
-use Batoi\Aif\Contracts\AIProviderInterface;
+use Batoi\Aif\Contracts\CapabilityAwareProviderInterface;
 use Batoi\Aif\Value\EmbeddingRequest;
 use Batoi\Aif\Value\EmbeddingResponse;
 use Batoi\Aif\Value\InferenceRequest;
 use Batoi\Aif\Value\InferenceResponse;
 use Batoi\Aif\Value\ModerationRequest;
 use Batoi\Aif\Value\ModerationResponse;
+use Batoi\Aif\Value\ProviderCapability;
 use Batoi\Aif\Value\StreamEvent;
 
-final readonly class MockProvider implements AIProviderInterface
+final readonly class MockProvider implements CapabilityAwareProviderInterface
 {
     public function __construct(
         private string $providerCode = 'mock',
@@ -60,6 +61,15 @@ final readonly class MockProvider implements AIProviderInterface
     public function healthCheck(): bool
     {
         return true;
+    }
+
+    public function capabilities(): array
+    {
+        return [
+            new ProviderCapability($this->providerCode, $this->modelCode, ['text', 'stream'], ['accepts_model_override' => true]),
+            new ProviderCapability($this->providerCode, 'mock-embedding', ['embedding'], ['accepts_model_override' => true]),
+            new ProviderCapability($this->providerCode, 'mock-moderation', ['moderation'], ['accepts_model_override' => true]),
+        ];
     }
 
     private function requestUid(): string

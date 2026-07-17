@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Batoi\Aif\Policy;
 
-use Batoi\Aif\Contracts\PolicyEngineInterface;
+use Batoi\Aif\Contracts\OperationAwarePolicyEngineInterface;
 use Batoi\Aif\Value\ExecutionContext;
 use Batoi\Aif\Value\InferenceRequest;
 use Batoi\Aif\Value\PolicyDecision;
+use Batoi\Aif\Value\PolicySubject;
 
-final readonly class StaticPolicyEngine implements PolicyEngineInterface
+final readonly class StaticPolicyEngine implements OperationAwarePolicyEngineInterface
 {
     /**
      * @param list<string> $allowedProviders
@@ -26,8 +27,18 @@ final readonly class StaticPolicyEngine implements PolicyEngineInterface
 
     public function decide(ExecutionContext $context, InferenceRequest $request): PolicyDecision
     {
+        return $this->decideForOperation(
+            $context,
+            new PolicySubject(ExecutionOperation::Infer, $request),
+        );
+    }
+
+    public function decideForOperation(ExecutionContext $context, PolicySubject $subject): PolicyDecision
+    {
+        $request = $subject->request;
         $reasons = [];
         $evidence = [
+            'operation' => $subject->operation->value,
             'workspace_id' => $context->workspaceId,
             'provider' => $request->provider,
             'model' => $request->model,

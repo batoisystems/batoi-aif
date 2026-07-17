@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4']
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: curl
+          coverage: none
+          tools: composer:v2
+
+      - name: Validate Composer metadata
+        run: composer validate --strict --no-check-publish
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run unit and smoke tests
+        run: composer test
+
+      - name: Run static analysis
+        run: composer analyse
+
+      - name: Check coding style
+        run: composer lint
+
+      - name: Validate RAD schema profile
+        run: php bin/aif-rad-schema-check.php
+
+      - name: Verify bundled ZIP autoloader
+        run: php examples/zip-dropin/hello-world.php
+
+  optional-adapters:
+    name: ${{ matrix.adapter }} adapter
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        adapter: [laravel, symfony]
+
+    defaults:
+      run:
+        working-directory: examples/${{ matrix.adapter }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer:v2
+
+      - name: Validate adapter package
+        run: composer validate --strict --no-check-publish --no-check-lock
+
+      - name: Install adapter dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run adapter tests
+        run: composer test
+
+  mysql-persistence:
+    name: MySQL 8 persistence
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: aif_test
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: curl, pdo_mysql
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Apply RAD migration
+        run: mysql --host=127.0.0.1 --user=root --password=root aif_test < database/migrations/rad/001_aif_foundation.sql
+
+      - name: Run MySQL persistence contracts
+        env:
+          AIF_MYSQL_DSN: mysql:host=127.0.0.1;port=3306;dbname=aif_test;charset=utf8mb4
+          AIF_MYSQL_USER: root
+          AIF_MYSQL_PASSWORD: root
+        run: vendor/bin/phpunit tests/Rad/RadMySqlIntegrationTest.php
+
+      - name: Roll back RAD migration
+        run: mysql --host=127.0.0.1 --user=root --password=root aif_test < database/migrations/rad/001_aif_foundation_down.sql
+
+      - name: Verify rollback removed AIF tables
+        run: |
+          remaining="$(mysql --host=127.0.0.1 --user=root --password=root --batch --skip-column-names aif_test \
+            -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'aif_test' AND (table_name LIKE 'a_aif_%' OR table_name LIKE 's_aif_%')")"
+          test "$remaining" = "0"

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Providers;
+namespace Batoi\Aif\Laravel;
 
 use Batoi\Aif\Contracts\ExecutionContextResolverInterface;
 use Batoi\Aif\Value\ExecutionContext;
@@ -31,4 +31,3 @@ final readonly class LaravelExecutionContextResolver implements ExecutionContext
         );
     }
 }
-

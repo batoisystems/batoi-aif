@@ -1,16 +1,25 @@
 # Symfony Adapter
 
-The Symfony adapter should make Batoi AIF available through Symfony's dependency injection, security, routing, console, and Messenger systems.
+The Symfony adapter makes Batoi AIF available as a separately installable/testable example package for dependency injection, HTTP, and routing integration.
 
 This adapter is optional. AIF core must work without Symfony installed.
 
-## Proposed Namespace
+## Namespace
 
 ```text
 Batoi\Aif\Symfony
 ```
 
-## Proposed Structure
+## Current Package
+
+The optional package is under `examples/symfony/` with its own `composer.json`, PHPUnit configuration, and context-resolver test. Its Symfony dependencies are not part of the root package.
+
+```bash
+composer install --working-dir=examples/symfony
+composer test --working-dir=examples/symfony
+```
+
+## Target Expansion
 
 ```text
 src/Symfony/

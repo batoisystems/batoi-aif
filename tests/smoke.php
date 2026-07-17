@@ -34,22 +34,34 @@ use Batoi\Aif\Aif;
 use Batoi\Aif\Api\AifApi;
 use Batoi\Aif\Audit\InMemoryAuditLog;
 use Batoi\Aif\Exception\PolicyDeniedException;
+use Batoi\Aif\Exception\GovernanceConfigurationException;
+use Batoi\Aif\Exception\PromptRenderException;
+use Batoi\Aif\Exception\ReviewRequiredException;
+use Batoi\Aif\Exception\StreamingNotSupportedException;
 use Batoi\Aif\Gateway\AifGateway;
+use Batoi\Aif\Gateway\RuntimeMode;
+use Batoi\Aif\Policy\ExecutionOperation;
+use Batoi\Aif\Policy\PolicyAction;
 use Batoi\Aif\Policy\StaticPolicyEngine;
 use Batoi\Aif\Prompts\InMemoryPromptRegistry;
+use Batoi\Aif\Prompts\PromptRenderer;
 use Batoi\Aif\Providers\InMemoryProviderRegistry;
 use Batoi\Aif\Providers\MockProvider;
 use Batoi\Aif\Providers\OpenAICompatibleProvider;
 use Batoi\Aif\Queue\InMemoryQueueAdapter;
+use Batoi\Aif\Review\InMemoryReviewRepository;
 use Batoi\Aif\Rad\RadArrayContextResolver;
 use Batoi\Aif\Rad\RadRunDataContextResolver;
 use Batoi\Aif\Rad\RadRolePermissionChecker;
 use Batoi\Aif\Tests\Fixtures\FakeHttpTransport;
+use Batoi\Aif\Tests\Fixtures\ConfigurablePolicyEngine;
+use Batoi\Aif\Tests\Fixtures\RecordingProvider;
 use Batoi\Aif\Value\EmbeddingRequest;
 use Batoi\Aif\Value\ExecutionContext;
 use Batoi\Aif\Value\HttpResponse;
 use Batoi\Aif\Value\InferenceRequest;
 use Batoi\Aif\Value\ModerationRequest;
+use Batoi\Aif\Value\PolicyDecision;
 use Batoi\Aif\Value\ProviderCapability;
 use Batoi\Aif\Value\PromptVersion;
 use Batoi\Aif\Value\VectorRecord;
@@ -61,7 +73,7 @@ if (Aif::name() !== 'Batoi AIF') {
     exit(1);
 }
 
-if (Aif::VERSION !== '0.1.0') {
+if (Aif::VERSION !== '1.0.0') {
     fwrite(STDERR, "Unexpected framework version.\n");
     exit(1);
 }
@@ -386,6 +398,159 @@ $deletedVectorResults = $vectorStore->search(new VectorSearchRequest(
 if ($deletedVectorResults !== []) {
     fwrite(STDERR, "Unexpected in-memory vector delete behavior.\n");
     exit(1);
+}
+
+$governedContext = new ExecutionContext('governed_user', 'governed_space', ['admin'], 'trace_1');
+$recordingProvider = new RecordingProvider();
+$recordingRegistry = new InMemoryProviderRegistry(['recording' => $recordingProvider]);
+$missingContextAudit = new InMemoryAuditLog();
+$missingContextGateway = new AifGateway(
+    providers: $recordingRegistry,
+    defaultProvider: 'recording',
+    policyEngine: new StaticPolicyEngine(),
+    auditLog: $missingContextAudit,
+    runtimeMode: RuntimeMode::Governed,
+);
+
+try {
+    $missingContextGateway->infer(new InferenceRequest('Must not execute'));
+    fwrite(STDERR, "Expected governed mode to require context.\n");
+    exit(1);
+} catch (GovernanceConfigurationException) {
+}
+
+if ($recordingProvider->calls !== [] || count($missingContextAudit->all()) !== 1) {
+    fwrite(STDERR, "Governed dependency failure was not fail-closed and audited.\n");
+    exit(1);
+}
+
+$promptFailureAudit = new InMemoryAuditLog();
+$promptFailureGateway = new AifGateway(
+    providers: $recordingRegistry,
+    defaultProvider: 'recording',
+    policyEngine: new StaticPolicyEngine(),
+    promptRegistry: new InMemoryPromptRegistry([
+        new PromptVersion('needs_value', '1.0.0', 'Value: {{value}}'),
+    ]),
+    auditLog: $promptFailureAudit,
+    runtimeMode: RuntimeMode::Governed,
+);
+
+try {
+    $promptFailureGateway->infer(new InferenceRequest('', promptCode: 'needs_value'), $governedContext);
+    fwrite(STDERR, "Expected prompt rendering failure.\n");
+    exit(1);
+} catch (PromptRenderException) {
+}
+
+if (count($promptFailureAudit->all()) !== 1 || $recordingProvider->calls !== []) {
+    fwrite(STDERR, "Prompt failure did not create exactly one pre-provider audit record.\n");
+    exit(1);
+}
+
+$redactionPolicy = new ConfigurablePolicyEngine(new PolicyDecision(
+    PolicyAction::RedactAndContinue,
+    ['pii_redacted'],
+    obligations: ['redacted_input' => 'Customer: [REDACTED]'],
+));
+$redactionAudit = new InMemoryAuditLog();
+$redactionGateway = new AifGateway(
+    providers: $recordingRegistry,
+    defaultProvider: 'recording',
+    policyEngine: $redactionPolicy,
+    auditLog: $redactionAudit,
+    runtimeMode: RuntimeMode::Governed,
+);
+$redactionGateway->infer(new InferenceRequest('Customer: secret@example.test'), $governedContext);
+
+if (($recordingProvider->calls[0]['input'] ?? '') !== 'Customer: [REDACTED]'
+    || ($redactionAudit->all()[0]->metadata['policy_redacted'] ?? false) !== true
+    || $redactionAudit->all()[0]->traceUid !== 'trace_1') {
+    fwrite(STDERR, "Redaction obligation or audit correlation failed.\n");
+    exit(1);
+}
+
+$callsBeforeReview = count($recordingProvider->calls);
+$reviewRepository = new InMemoryReviewRepository();
+$reviewAudit = new InMemoryAuditLog();
+$reviewPolicy = new ConfigurablePolicyEngine(new PolicyDecision(PolicyAction::RequiresReview, ['high_risk']));
+$reviewGateway = new AifGateway(
+    providers: $recordingRegistry,
+    defaultProvider: 'recording',
+    policyEngine: $reviewPolicy,
+    auditLog: $reviewAudit,
+    runtimeMode: RuntimeMode::Governed,
+    reviewRepository: $reviewRepository,
+);
+
+try {
+    $reviewGateway->embed(new EmbeddingRequest('Review this'), context: $governedContext);
+    fwrite(STDERR, "Expected review-required execution to pause.\n");
+    exit(1);
+} catch (ReviewRequiredException $exception) {
+    if ($exception->reviewUid === '') {
+        fwrite(STDERR, "Review UID was not returned.\n");
+        exit(1);
+    }
+}
+
+if (count($recordingProvider->calls) !== $callsBeforeReview
+    || count($reviewRepository->all()) !== 1
+    || count($reviewAudit->all()) !== 1
+    || $reviewAudit->all()[0]->status !== 'review_required'
+    || ($reviewPolicy->subjects[0]->operation ?? null) !== ExecutionOperation::Embed) {
+    fwrite(STDERR, "Review pause, operation-aware policy, or audit behavior failed.\n");
+    exit(1);
+}
+
+$invalidApiResponse = (new AifApi(new AifGateway($recordingRegistry, defaultProvider: 'recording')))->infer([]);
+
+if (($invalidApiResponse['error']['code'] ?? '') !== 'invalid_request'
+    || ($invalidApiResponse['error']['http_status'] ?? 0) !== 422
+    || str_contains((string) ($invalidApiResponse['error']['message'] ?? ''), 'Exception')) {
+    fwrite(STDERR, "Stable API validation error mapping failed.\n");
+    exit(1);
+}
+
+$versionedPrompts = new InMemoryPromptRegistry([
+    new PromptVersion('semantic_order', '1.9.0', 'old'),
+    new PromptVersion('semantic_order', '1.10.0', 'new'),
+]);
+
+if ($versionedPrompts->get('semantic_order')->version !== '1.10.0') {
+    fwrite(STDERR, "Semantic prompt version selection failed.\n");
+    exit(1);
+}
+
+$schemaPrompt = new PromptVersion(
+    code: 'schema_prompt',
+    version: '1.0.0',
+    template: 'Count: {{count}}',
+    inputSchema: [
+        'required' => ['count'],
+        'properties' => ['count' => ['type' => 'integer']],
+        'additionalProperties' => false,
+    ],
+);
+
+try {
+    (new PromptRenderer())->render($schemaPrompt, ['count' => 'not-an-integer']);
+    fwrite(STDERR, "Expected prompt schema validation failure.\n");
+    exit(1);
+} catch (PromptRenderException) {
+}
+
+if (!$openAiProvider->capabilities()[0]->supports('text') || $openAiProvider->capabilities()[0]->supports('stream')) {
+    fwrite(STDERR, "Provider capability reporting failed.\n");
+    exit(1);
+}
+
+try {
+    foreach ($openAiProvider->stream(new InferenceRequest('Do not buffer')) as $event) {
+    }
+    fwrite(STDERR, "Expected unsupported incremental streaming failure.\n");
+    exit(1);
+} catch (StreamingNotSupportedException) {
 }
 
 echo "Smoke test passed.\n";

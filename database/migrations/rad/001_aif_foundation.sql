@@ -229,11 +229,19 @@ CREATE TABLE IF NOT EXISTS a_aif_call_log (
   updatedby bigint(20) DEFAULT NULL,
   updatestamp timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   a_request_uid char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_provider_request_uid varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   a_actor_entity_id bigint(20) DEFAULT NULL,
+  a_trace_uid varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_operation varchar(40) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'infer',
   a_provider_id bigint(20) DEFAULT NULL,
   a_model_id bigint(20) DEFAULT NULL,
   a_prompt_version_id bigint(20) DEFAULT NULL,
+  a_provider_code varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_model_code varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_prompt_code varchar(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_prompt_version varchar(40) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   a_policy_decision varchar(40) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_policy_version varchar(80) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   a_policy_evidence_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   a_usage_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   a_eval_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -242,15 +250,40 @@ CREATE TABLE IF NOT EXISTS a_aif_call_log (
   a_prev_hash char(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   a_row_hash char(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   a_latency_ms int(11) DEFAULT NULL,
-  a_status enum('ok','error','denied','requires_review') COLLATE utf8mb4_unicode_ci DEFAULT 'ok',
+  a_status enum('ok','error','denied','review_required') COLLATE utf8mb4_unicode_ci DEFAULT 'ok',
   a_error_code varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   a_error_message varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_metadata_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uid (uid),
   KEY idx_a_aif_call_log_space_time (space_id, createstamp),
   KEY idx_a_aif_call_log_status (space_id, a_status, livestatus),
   KEY idx_a_aif_call_log_actor (space_id, a_actor_entity_id, createstamp),
   KEY idx_a_aif_call_log_request (space_id, a_request_uid)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS a_aif_review (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  uid char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  livestatus enum('0','1','2','3') COLLATE utf8mb4_unicode_ci DEFAULT '0' COMMENT '0 = inactive, 1 = active, 2 = archived, 3 = suspended',
+  versioncode int(11) DEFAULT NULL,
+  wf_status int(11) NOT NULL DEFAULT '0',
+  space_id bigint(20) NOT NULL DEFAULT '0',
+  createdby bigint(20) DEFAULT NULL,
+  createstamp datetime DEFAULT NULL,
+  updatedby bigint(20) DEFAULT NULL,
+  updatestamp timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  a_operation varchar(40) COLLATE utf8mb4_unicode_ci NOT NULL,
+  a_request_hash char(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+  a_policy_evidence_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_status enum('pending','approved','rejected','expired','cancelled','consumed') COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
+  a_decidedby bigint(20) DEFAULT NULL,
+  a_decidedstamp datetime DEFAULT NULL,
+  a_decision_notes text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uid (uid),
+  KEY idx_a_aif_review_status (space_id, a_status, livestatus),
+  KEY idx_a_aif_review_request (space_id, a_request_hash)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS a_aif_eval (
@@ -274,6 +307,35 @@ CREATE TABLE IF NOT EXISTS a_aif_eval (
   UNIQUE KEY uid (uid),
   KEY idx_a_aif_eval_call (space_id, a_call_log_id),
   KEY idx_a_aif_eval_result (space_id, a_result, livestatus)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS a_aif_queue_job (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  uid char(36) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  livestatus enum('0','1','2','3') COLLATE utf8mb4_unicode_ci DEFAULT '0',
+  versioncode int(11) DEFAULT NULL,
+  wf_status int(11) NOT NULL DEFAULT '0',
+  space_id bigint(20) NOT NULL DEFAULT '0',
+  createdby bigint(20) DEFAULT NULL,
+  createstamp datetime DEFAULT NULL,
+  updatedby bigint(20) DEFAULT NULL,
+  updatestamp timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  a_job_name varchar(190) COLLATE utf8mb4_unicode_ci NOT NULL,
+  a_payload_json longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  a_options_json longtext COLLATE utf8mb4_unicode_ci NOT NULL,
+  a_status enum('queued','leased','acknowledged','failed','dead_lettered','cancelled') COLLATE utf8mb4_unicode_ci NOT NULL,
+  a_attempt int(11) NOT NULL DEFAULT '0',
+  a_max_attempts int(11) NOT NULL DEFAULT '3',
+  a_available_at bigint(20) NOT NULL,
+  a_lease_owner varchar(190) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_lease_expires_at bigint(20) DEFAULT NULL,
+  a_failure_reason varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_failure_metadata_json longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  a_idempotency_key varchar(190) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uid (uid),
+  UNIQUE KEY uq_a_aif_queue_idempotency (space_id, a_job_name, a_idempotency_key),
+  KEY idx_a_aif_queue_reserve (a_status, a_available_at, a_lease_expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TRIGGER IF EXISTS trg_a_aif_call_log_no_update;

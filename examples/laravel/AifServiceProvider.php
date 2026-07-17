@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Providers;
+namespace Batoi\Aif\Laravel;
 
 use Batoi\Aif\Api\AifApi;
+use Batoi\Aif\Audit\InMemoryAuditLog;
 use Batoi\Aif\Gateway\AifGateway;
+use Batoi\Aif\Gateway\RuntimeMode;
 use Batoi\Aif\Policy\StaticPolicyEngine;
 use Batoi\Aif\Providers\InMemoryProviderRegistry;
 use Batoi\Aif\Providers\MockProvider;
@@ -36,6 +38,8 @@ final class AifServiceProvider extends ServiceProvider
                     allowedProviders: array_values($config['policy']['allowed_providers'] ?? []),
                     allowedRoles: array_values($config['policy']['allowed_roles'] ?? []),
                 ),
+                auditLog: new InMemoryAuditLog(),
+                runtimeMode: RuntimeMode::Governed,
             );
         });
 
@@ -52,4 +56,3 @@ final class AifServiceProvider extends ServiceProvider
         ], 'batoi-aif-config');
     }
 }
-
