@@ -5,7 +5,7 @@
   "license": "Apache-2.0",
   "require": {
     "php": ">=8.3",
-    "batoi/aif": "dev-main",
+    "batoi/aif": "^1.0 || dev-main",
     "symfony/http-foundation": "^7.1",
     "symfony/routing": "^7.1"
   },

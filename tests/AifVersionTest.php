@@ -11,6 +11,6 @@ final class AifVersionTest extends TestCase
 {
     public function testPublicVersionMatchesRelease(): void
     {
-        self::assertSame('1.0.0', Aif::VERSION);
+        self::assertSame('1.0.1', Aif::VERSION);
     }
 }

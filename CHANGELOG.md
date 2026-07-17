@@ -2,6 +2,13 @@
 
 All notable changes are documented here. The project follows semantic versioning.
 
+## [1.0.1] - 2026-07-17
+
+### Fixed
+
+- Allow the Laravel and Symfony adapter fixtures to resolve both the development
+  branch and stable 1.x AIF releases in push- and tag-triggered CI workflows.
+
 ## [1.0.0] - 2026-07-17
 
 ### Added
@@ -28,4 +35,5 @@ All notable changes are documented here. The project follows semantic versioning
 - OpenAI-compatible streaming is explicitly reported as unsupported rather than emulated with buffered inference.
 - RAD call-log and review states align with core governance outcomes.
 
+[1.0.1]: https://github.com/batoisystems/batoi-aif/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/batoisystems/batoi-aif/releases/tag/v1.0.0

@@ -73,7 +73,7 @@ if (Aif::name() !== 'Batoi AIF') {
     exit(1);
 }
 
-if (Aif::VERSION !== '1.0.0') {
+if (Aif::VERSION !== '1.0.1') {
     fwrite(STDERR, "Unexpected framework version.\n");
     exit(1);
 }
